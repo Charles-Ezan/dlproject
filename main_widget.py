@@ -4,6 +4,7 @@ import pandas as pd
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QSizePolicy, QLabel, QComboBox, QBoxLayout
 from PySide2.QtCharts import QtCharts
 
+
 # from table_model import CustomTableModel
 
 
@@ -13,8 +14,8 @@ class Widget(QWidget):
         self.isPredicted = True
 
         # Getting the Model
-        self.bitcoin = data1
-        self.ripple = data2
+        self.crypto = data1
+        self.prediction = data2
 
         # Creating QChart
         self.chart = QtCharts.QChart()
@@ -35,9 +36,9 @@ class Widget(QWidget):
         test_button = QPushButton('Test')
         cryptocurrencie_title = QLabel('<h2>Bitcoin</h2>')
         cryptocurrencie_title.setSizePolicy(size)
-        final_label = QLabel('Valeur finale: '+'xxxx$')
-        error_label = QLabel('Erreur moyenne: '+ 'xx,x%')
-        rmse_label = QLabel('RMSE: '+'xxx')
+        final_label = QLabel('Valeur finale: ' + 'xxxx$')
+        error_label = QLabel('Erreur moyenne: ' + 'xx,x%')
+        rmse_label = QLabel('RMSE: ' + 'xxx')
 
         left_box = QVBoxLayout()
         buttons = QHBoxLayout()
@@ -64,11 +65,10 @@ class Widget(QWidget):
         # Set the layout to the QWidget
         self.setLayout(self.main_layout)
 
-
     def test_click(self):
-        self.init_chart(self.bitcoin, self.ripple)
+        self.init_chart(self.crypto, self.prediction)
 
-    def init_chart(self, data, data_bis):
+    def init_chart(self, data_crypto, data_prediction):
         # On s'assure que le graphique ne contient aucune donnée
         self.chart.removeAllSeries()
 
@@ -77,7 +77,7 @@ class Widget(QWidget):
 
         # Filling QLineSeries
         for index, row in data.iterrows():
-            t= row['Date']
+            t = row['date']
             date_fmt = "yyyy-MM-dd"
 
             x = QDateTime().fromString(t, date_fmt).toSecsSinceEpoch()
@@ -87,8 +87,8 @@ class Widget(QWidget):
         self.serie2.setName('Prédiction')
 
         # Filling QLineSeries
-        for index, row in data_bis.iterrows():
-            t2= str(row['Date'])
+        for index, row in data_prediction.iterrows():
+            t2 = str(row['Date'])
             date_fmt = "yyyy-MM-dd"
             x2 = QDateTime().fromString(t2, date_fmt).toSecsSinceEpoch()
             self.serie2.append(x2, float(row['Closing Price (USD)']))
@@ -110,7 +110,7 @@ class Widget(QWidget):
         self.chart.setAxisY(self.axis_y)
         # Pour l'instant l'axe y s'oriente autour des valeurs de la prédiction
         #       donc le cours réel peut être ammené à sortir du graph
-        #TO DO: get le min et max des deux courbes pour fixer l'axe
+        # TO DO: get le min et max des deux courbes pour fixer l'axe
         # self.axis_y.setRange(1.0,1.5)
         # self.serie1.attachAxis(self.axis_y)
         self.serie2.attachAxis(self.axis_y)
