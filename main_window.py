@@ -4,12 +4,8 @@ from PySide2.QtWidgets import QMainWindow,  QApplication
 class MainWindow(QMainWindow):
     def __init__(self, widget):
         QMainWindow.__init__(self)
-        self.setWindowTitle("Test app name")
+        self.setWindowTitle("Cryptocurrencies forecasting")
         self.setCentralWidget(widget)
-
-        # Menu
-        self.menu = self.menuBar()
-        self.file_menu = self.menu.addMenu("File")
 
         # Status Bar
         self.status = self.statusBar()
