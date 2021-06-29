@@ -3,23 +3,30 @@ from PySide2.QtGui import QPainter
 import pandas as pd
 from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QSizePolicy, QLabel, QComboBox, QBoxLayout
 from PySide2.QtCharts import QtCharts
+import training
 
 # from table_model import CustomTableModel
 
 
 class Widget(QWidget):
-    def __init__(self, data1, data2):
+    def __init__(self, ):
         QWidget.__init__(self)
         self.isPredicted = True
 
+        # Getting the datas
+        btc_prices, btc_gran, btc_time = training.getClosePrice(1392577232, 1622577232)
+        eth_prices, eth_gran, eth_time = training.getClosePrice(1392577232, 1622577232, coin_id='ethereum')
+        self.btc = pd.DataFrame({'date': btc_time, 'price': btc_prices})
+        self.eth = pd.DataFrame({'date': eth_time, 'price': eth_prices})
+
         # Getting the Model
-        self.bitcoin = data1
-        self.ripple = data2
+        #self.bitcoin = data1
+        #self.ripple = data2
 
         # Creating QChart
         self.chart = QtCharts.QChart()
         self.chart.setAnimationOptions(QtCharts.QChart.AllAnimations)
-        self.init_chart(data1, data2)
+        # self.init_chart(data1, data2)
 
         # Creating QChartView
         self.chart_view = QtCharts.QChartView(self.chart)

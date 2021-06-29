@@ -32,11 +32,12 @@ def getClosePrice(from_date, to_date, vs_currency='usd', coin_id='bitcoin'):
 
     price = cg.get_coin_market_chart_range_by_id(coin_id, vs_currency, from_date, to_date)
     close_prices = []
+    timestamp = []
     for prices in price["prices"]:
+        timestamp.append(prices[0])
         close_prices.append(prices[1])
 
-    return close_prices, granularity
-
+    return close_prices, granularity, timestamp
 
 # Creating train and test dataset
 def preprocessing(dataset, data_size, target_size):
