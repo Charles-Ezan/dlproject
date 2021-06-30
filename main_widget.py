@@ -16,14 +16,10 @@ class Widget(QWidget):
         self.btc = pd.DataFrame({'date': btc_time, 'price': btc_prices})
         self.eth = pd.DataFrame({'date': eth_time, 'price': eth_prices})
 
-        # Getting the Model
-        #self.bitcoin = data1
-        #self.ripple = data2
-
         # Creating QChart
         self.chart = QtCharts.QChart()
         self.chart.setAnimationOptions(QtCharts.QChart.AllAnimations)
-        self.init_chart(self.btc, 'Bitcoin')
+        self.init_chart(self.btc, 'Bitcoin') #The default crypto is the bitcoin
 
         # Creating QChartView
         self.chart_view = QtCharts.QChartView(self.chart)
@@ -31,47 +27,49 @@ class Widget(QWidget):
 
         # QWidget Layout
         self.main_layout = QHBoxLayout()
-        size = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
 
         # Left layout
-        size.setHorizontalStretch(1)
-        train_button = QPushButton('Train')
-        test_button = QPushButton('Test')
-        #cryptocurrencie_title = QLabel('<h2>Bitcoin</h2>')
-        cryptocurrencie_title = QComboBox()
-        cryptocurrencie_title.addItems(['Bitcoin', 'Ethereum'])
-        cryptocurrencie_title.currentIndexChanged.connect(self.selection_change)
-        cryptocurrencie_title.setSizePolicy(size)
-        final_label = QLabel('Valeur finale: '+'xxxx$')
-        error_label = QLabel('Erreur moyenne: '+ 'xx,x%')
-        rmse_label = QLabel('RMSE: '+'xxx')
-
         left_box = QVBoxLayout()
         buttons = QHBoxLayout()
+            # Train Button
+        train_button = QPushButton('Train')
+        train_button.clicked.connect(self.train_click)
+            # Test Button
+        test_button = QPushButton('Test')
+        test_button.clicked.connect(self.test_click)
+            # Crypto QComboBox
+        cryptocurrencie_title = QComboBox()
+        cryptocurrencie_title.addItems(['Bitcoin', 'Ethereum'])
+        cryptocurrencie_title.currentIndexChanged.connect(self.crypto_change)
+            # Labels
+        error_label = QLabel('Erreur moyenne: '+ 'xx,x%')
+        rmse_label = QLabel('RMSE: '+'xxx')
+            # Model choice
+        models_button = QComboBox()
+        models_button.addItems(['<none>', 'Saved model'])
+        models_button.currentIndexChanged.connect(self.model_change)
+
 
         buttons.addWidget(train_button)
         left_box.addSpacing(10)
         buttons.addWidget(test_button)
         left_box.addWidget(cryptocurrencie_title)
-        left_box.addWidget(final_label)
         left_box.addWidget(error_label)
         left_box.addWidget(rmse_label)
+        left_box.addWidget(models_button)
         left_box.addSpacing(5)
         left_box.addLayout(buttons)
         left_box.addStretch(1)
-        train_button.clicked.connect(self.test_click)
         self.main_layout.addLayout(left_box)
 
         # Right Layout
-        size.setHorizontalStretch(4)
-        self.chart_view.setSizePolicy(size)
         self.chart_view.setFixedSize(1000, 700)
         self.main_layout.addWidget(self.chart_view)
 
         # Set the layout to the QWidget
         self.setLayout(self.main_layout)
 
-    def selection_change(self, i):
+    def crypto_change(self, i):
         if i == 1:
             data = self.eth
             title = 'Ethereum'
@@ -80,9 +78,9 @@ class Widget(QWidget):
             title = 'Bitcoin'
         self.init_chart(data, title)
 
-
-    def test_click(self):
-        self.add_prediction(self.eth)
+    def model_change(self, i):
+        if i == 0:
+            return
 
     def init_chart(self, data, title):
         # On s'assure que le graphique ne contient aucune donnée
@@ -117,8 +115,20 @@ class Widget(QWidget):
         self.chart.setTitle(title)
 
 
+    def train_click(self):
+        self.add_prediction(self.eth)
+
+    def test_click(self):
+        self.add_prediction(self.eth)
+
     def add_prediction(self, data):
-        # self.chart.removeSeries('Prédiction')
+        # We remove any other prediction on the chart to avoid superposition
+        series = self.chart.series()
+        if len(series) > 1:
+            series.pop(0)
+            for s in series:
+                self.chart.removeSeries(s)
+
         self.serie1 = QtCharts.QLineSeries()
         self.serie1.setName('Prédiction')
 
