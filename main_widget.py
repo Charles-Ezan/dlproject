@@ -1,7 +1,6 @@
-from PySide2.QtCore import QDateTime, Qt
 from PySide2.QtGui import QPainter
 import pandas as pd
-from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QSizePolicy, QLabel, QComboBox, QBoxLayout, QRadioButton
+from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QComboBox
 from PySide2.QtCharts import QtCharts
 import training
 
@@ -30,14 +29,17 @@ class Widget(QWidget):
 
         # Left layout
         left_box = QVBoxLayout()
-        buttons = QHBoxLayout()
+        title_box = QHBoxLayout()
+        model_box = QHBoxLayout()
+        button_box = QHBoxLayout()
             # Train Button
         train_button = QPushButton('Train')
         train_button.clicked.connect(self.train_click)
             # Test Button
         test_button = QPushButton('Test')
         test_button.clicked.connect(self.test_click)
-            # Crypto QComboBox
+            # Crypto choice
+        crypto_text = QLabel('Cryptomonnaie :')
         cryptocurrencie_title = QComboBox()
         cryptocurrencie_title.addItems(['Bitcoin', 'Ethereum'])
         cryptocurrencie_title.currentIndexChanged.connect(self.crypto_change)
@@ -45,20 +47,24 @@ class Widget(QWidget):
         error_label = QLabel('Erreur moyenne: '+ 'xx,x%')
         rmse_label = QLabel('RMSE: '+'xxx')
             # Model choice
+        model_text = QLabel('Modèle :')
         models_button = QComboBox()
         models_button.addItems(['<none>', 'Saved model'])
         models_button.currentIndexChanged.connect(self.model_change)
 
-
-        buttons.addWidget(train_button)
-        left_box.addSpacing(10)
-        buttons.addWidget(test_button)
-        left_box.addWidget(cryptocurrencie_title)
+        title_box.addWidget(crypto_text)
+        title_box.addWidget(cryptocurrencie_title)
+        left_box.addLayout(title_box)
+        model_box.addWidget(model_text)
+        model_box.addWidget(models_button)
+        left_box.addLayout(model_box)
+        left_box.addSpacing(15)
         left_box.addWidget(error_label)
         left_box.addWidget(rmse_label)
-        left_box.addWidget(models_button)
-        left_box.addSpacing(5)
-        left_box.addLayout(buttons)
+        left_box.addSpacing(10)
+        button_box.addWidget(train_button)
+        button_box.addWidget(test_button)
+        left_box.addLayout(button_box)
         left_box.addStretch(1)
         self.main_layout.addLayout(left_box)
 
