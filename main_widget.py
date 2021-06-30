@@ -1,12 +1,9 @@
 from PySide2.QtCore import QDateTime, Qt
 from PySide2.QtGui import QPainter
 import pandas as pd
-from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QSizePolicy, QLabel, QComboBox, QBoxLayout
+from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QSizePolicy, QLabel, QComboBox, QBoxLayout, QRadioButton
 from PySide2.QtCharts import QtCharts
 import training
-
-# from table_model import CustomTableModel
-
 
 class Widget(QWidget):
     def __init__(self, ):
@@ -26,7 +23,7 @@ class Widget(QWidget):
         # Creating QChart
         self.chart = QtCharts.QChart()
         self.chart.setAnimationOptions(QtCharts.QChart.AllAnimations)
-        # self.init_chart(data1, data2)
+        self.init_chart(self.btc, 'Bitcoin')
 
         # Creating QChartView
         self.chart_view = QtCharts.QChartView(self.chart)
@@ -40,7 +37,10 @@ class Widget(QWidget):
         size.setHorizontalStretch(1)
         train_button = QPushButton('Train')
         test_button = QPushButton('Test')
-        cryptocurrencie_title = QLabel('<h2>Bitcoin</h2>')
+        #cryptocurrencie_title = QLabel('<h2>Bitcoin</h2>')
+        cryptocurrencie_title = QComboBox()
+        cryptocurrencie_title.addItems(['Bitcoin', 'Ethereum'])
+        cryptocurrencie_title.currentIndexChanged.connect(self.selection_change)
         cryptocurrencie_title.setSizePolicy(size)
         final_label = QLabel('Valeur finale: '+'xxxx$')
         error_label = QLabel('Erreur moyenne: '+ 'xx,x%')
@@ -71,11 +71,20 @@ class Widget(QWidget):
         # Set the layout to the QWidget
         self.setLayout(self.main_layout)
 
+    def selection_change(self, i):
+        if i == 1:
+            data = self.eth
+            title = 'Ethereum'
+        else:
+            data = self.btc
+            title = 'Bitcoin'
+        self.init_chart(data, title)
+
 
     def test_click(self):
-        self.init_chart(self.bitcoin, self.ripple)
+        self.add_prediction(self.eth)
 
-    def init_chart(self, data, data_bis):
+    def init_chart(self, data, title):
         # On s'assure que le graphique ne contient aucune donnée
         self.chart.removeAllSeries()
 
@@ -84,41 +93,53 @@ class Widget(QWidget):
 
         # Filling QLineSeries
         for index, row in data.iterrows():
-            t= row['Date']
-            date_fmt = "yyyy-MM-dd"
+            self.serie1.append(row['date'], row['price'])
 
-            x = QDateTime().fromString(t, date_fmt).toSecsSinceEpoch()
-            self.serie1.append(x, float(row['Closing Price (USD)']))
-
-        self.serie2 = QtCharts.QLineSeries()
-        self.serie2.setName('Prédiction')
-
-        # Filling QLineSeries
-        for index, row in data_bis.iterrows():
-            t2= str(row['Date'])
-            date_fmt = "yyyy-MM-dd"
-            x2 = QDateTime().fromString(t2, date_fmt).toSecsSinceEpoch()
-            self.serie2.append(x2, float(row['Closing Price (USD)']))
+        # Filling QChart
         self.chart.addSeries(self.serie1)
-        self.chart.addSeries(self.serie2)
+        # self.chart.createDefaultAxes()
 
         # Setting X-axis
         self.axis_x = QtCharts.QDateTimeAxis()
-        self.axis_x.setTickCount(10)
-        self.axis_x.setFormat('dd.MM')
+        self.axis_x.setFormat('MM-yyyy')
         self.axis_x.setTitleText('Date')
         self.chart.setAxisX(self.axis_x)
         self.serie1.attachAxis(self.axis_x)
+
         # Setting Y-axis
         self.axis_y = QtCharts.QValueAxis()
-        self.axis_y.setTickCount(10)
-        self.axis_y.setLabelFormat('%.2f')
-        self.axis_y.setTitleText('Price')
+        self.axis_y.setLabelFormat('%.2f $')
+        self.axis_y.setTitleText('Prix (USD)')
         self.chart.setAxisY(self.axis_y)
-        # Pour l'instant l'axe y s'oriente autour des valeurs de la prédiction
-        #       donc le cours réel peut être ammené à sortir du graph
-        #TO DO: get le min et max des deux courbes pour fixer l'axe
-        # self.axis_y.setRange(1.0,1.5)
-        # self.serie1.attachAxis(self.axis_y)
-        self.serie2.attachAxis(self.axis_y)
-        # self.chart.setTitle(str(data.loc[0,'Currency']))
+        self.serie1.attachAxis(self.axis_y)
+
+        # Setting the title
+        self.chart.setTitle(title)
+
+
+    def add_prediction(self, data):
+        # self.chart.removeSeries('Prédiction')
+        self.serie1 = QtCharts.QLineSeries()
+        self.serie1.setName('Prédiction')
+
+        # Filling QLineSeries
+        for index, row in data.iterrows():
+            self.serie1.append(row['date'], row['price'])
+
+        # Filling QChart
+        self.chart.addSeries(self.serie1)
+        self.chart.createDefaultAxes()
+
+        # Setting X-axis
+        self.axis_x = QtCharts.QDateTimeAxis()
+        self.axis_x.setFormat('MM-yyyy')
+        self.axis_x.setTitleText('Date')
+        self.chart.setAxisX(self.axis_x)
+        self.serie1.attachAxis(self.axis_x)
+
+        # Setting Y-axis
+        self.axis_y = QtCharts.QValueAxis()
+        self.axis_y.setLabelFormat('%.2f $')
+        self.axis_y.setTitleText('Prix (USD)')
+        self.chart.setAxisY(self.axis_y)
+        self.serie1.attachAxis(self.axis_y)
