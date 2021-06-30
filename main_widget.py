@@ -101,7 +101,7 @@ class Widget(QWidget):
 
         # Setting X-axis
         self.axis_x = QtCharts.QDateTimeAxis()
-        self.axis_x.setFormat('MM-yyyy')
+        self.axis_x.setFormat('MM/yyyy')
         self.axis_x.setTitleText('Date')
         self.chart.setAxisX(self.axis_x)
         self.serie1.attachAxis(self.axis_x)
@@ -132,7 +132,7 @@ class Widget(QWidget):
 
         # Setting X-axis
         self.axis_x = QtCharts.QDateTimeAxis()
-        self.axis_x.setFormat('MM-yyyy')
+        self.axis_x.setFormat('MM/yyyy')
         self.axis_x.setTitleText('Date')
         self.chart.setAxisX(self.axis_x)
         self.serie1.attachAxis(self.axis_x)
