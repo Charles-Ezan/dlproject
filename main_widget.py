@@ -1,24 +1,29 @@
 from PySide2.QtGui import QPainter
 import pandas as pd
-from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QComboBox
+from PySide2.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QComboBox, QRadioButton
 from PySide2.QtCharts import QtCharts
 import training
 
 class Widget(QWidget):
     def __init__(self, ):
         QWidget.__init__(self)
-        self.isPredicted = True
+        self.aWeekIsChecked = True
+        self.isBtc = True
 
         # Getting the datas
         btc_prices, btc_gran, btc_time = training.getClosePrice(1392577232, 1622577232)
         eth_prices, eth_gran, eth_time = training.getClosePrice(1392577232, 1622577232, coin_id='ethereum')
         self.btc = pd.DataFrame({'date': btc_time, 'price': btc_prices})
         self.eth = pd.DataFrame({'date': eth_time, 'price': eth_prices})
-
+        # a week = 1621972432
+        #          1392595200000
+        #          1392577232
+        #          1622160000000
+        # a month =1619942032
         # Creating QChart
         self.chart = QtCharts.QChart()
         self.chart.setAnimationOptions(QtCharts.QChart.AllAnimations)
-        self.init_chart(self.btc, 'Bitcoin') #The default crypto is the bitcoin
+        self.init_chart() #The default crypto is the bitcoin
 
         # Creating QChartView
         self.chart_view = QtCharts.QChartView(self.chart)
@@ -32,6 +37,7 @@ class Widget(QWidget):
         title_box = QHBoxLayout()
         model_box = QHBoxLayout()
         button_box = QHBoxLayout()
+        prediction_box = QHBoxLayout()
             # Train Button
         train_button = QPushButton('Train')
         train_button.clicked.connect(self.train_click)
@@ -51,17 +57,33 @@ class Widget(QWidget):
         models_button = QComboBox()
         models_button.addItems(['<none>', 'Saved model'])
         models_button.currentIndexChanged.connect(self.model_change)
+            # Prediction duration
+        prediction_title = QLabel('Prédiction sur :')
+        week = QRadioButton("Une semaine")
+        week.setChecked(True)
+        week.toggled.connect(lambda: self.prediction_size(week))
 
+        month = QRadioButton("Un mois")
+        month.toggled.connect(lambda: self.prediction_size(month))
+        prediction_box.addWidget(prediction_title)
+        prediction_box.addWidget(week)
+        prediction_box.addWidget(month)
+
+        # Adding crypto to layout
         title_box.addWidget(crypto_text)
         title_box.addWidget(cryptocurrencie_title)
         left_box.addLayout(title_box)
+        # Adding models to layout
         model_box.addWidget(model_text)
         model_box.addWidget(models_button)
         left_box.addLayout(model_box)
+        left_box.addLayout(prediction_box)
         left_box.addSpacing(15)
+        # Adding error labels
         left_box.addWidget(error_label)
         left_box.addWidget(rmse_label)
         left_box.addSpacing(10)
+        # Adding train/test buttons
         button_box.addWidget(train_button)
         button_box.addWidget(test_button)
         left_box.addLayout(button_box)
@@ -77,35 +99,41 @@ class Widget(QWidget):
 
     def crypto_change(self, i):
         if i == 1:
-            data = self.eth
-            title = 'Ethereum'
+            self.isBtc = False
         else:
-            data = self.btc
-            title = 'Bitcoin'
-        self.init_chart(data, title)
+            self.isBtc = True
+        self.init_chart()
 
     def model_change(self, i):
         if i == 0:
             return
 
-    def init_chart(self, data, title):
+    def init_chart(self):
         # On s'assure que le graphique ne contient aucune donnée
         self.chart.removeAllSeries()
 
         self.serie1 = QtCharts.QLineSeries()
         self.serie1.setName('Court réel')
+        data = self.btc
+        title = 'Bitcoin'
+        if self.isBtc == False:
+            data = self.eth
+            title = 'Ethereum'
+        breakvalue = 1621972432000
+        if self.aWeekIsChecked == False:
+            breakvalue = 1619942032000
 
         # Filling QLineSeries
         for index, row in data.iterrows():
-            self.serie1.append(row['date'], row['price'])
+            if row['date']>breakvalue:
+                self.serie1.append(row['date'], row['price'])
 
         # Filling QChart
         self.chart.addSeries(self.serie1)
-        # self.chart.createDefaultAxes()
 
         # Setting X-axis
         self.axis_x = QtCharts.QDateTimeAxis()
-        self.axis_x.setFormat('MM/yyyy')
+        self.axis_x.setFormat('dd/MM')
         self.axis_x.setTitleText('Date')
         self.chart.setAxisX(self.axis_x)
         self.serie1.attachAxis(self.axis_x)
@@ -125,7 +153,21 @@ class Widget(QWidget):
         self.add_prediction(self.eth)
 
     def test_click(self):
-        self.add_prediction(self.eth)
+        self.chart.scroll(50.0, 10.0)
+
+    def prediction_size(self,b):
+        if b.text() == 'Une semaine':
+            if b.isChecked():
+                self.aWeekIsChecked = True
+            else:
+                self.aWeekIsChecked = False
+        else:
+            if b.isChecked():
+                self.aWeekIsChecked = False
+            else:
+                self.aWeekIsChecked = True
+        self.init_chart()
+
 
     def add_prediction(self, data):
         # We remove any other prediction on the chart to avoid superposition
@@ -138,9 +180,14 @@ class Widget(QWidget):
         self.serie1 = QtCharts.QLineSeries()
         self.serie1.setName('Prédiction')
 
+        breakvalue = 1621972432000
+        if self.aWeekIsChecked == False:
+            breakvalue = 1619942032000
+
         # Filling QLineSeries
         for index, row in data.iterrows():
-            self.serie1.append(row['date'], row['price'])
+            if row['date'] > breakvalue:
+                self.serie1.append(row['date'], row['price'])
 
         # Filling QChart
         self.chart.addSeries(self.serie1)
@@ -148,7 +195,7 @@ class Widget(QWidget):
 
         # Setting X-axis
         self.axis_x = QtCharts.QDateTimeAxis()
-        self.axis_x.setFormat('MM/yyyy')
+        self.axis_x.setFormat('dd/MM')
         self.axis_x.setTitleText('Date')
         self.chart.setAxisX(self.axis_x)
         self.serie1.attachAxis(self.axis_x)
