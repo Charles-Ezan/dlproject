@@ -9,6 +9,8 @@ class Widget(QWidget):
         QWidget.__init__(self)
         self.aWeekIsChecked = True
         self.isBtc = True
+        self.RMSE = 0.0
+        self.error = 0.0
 
         # Getting the datas
         btc_prices, btc_gran, btc_time = training.getClosePrice(1392577232, 1622577232)
@@ -46,12 +48,12 @@ class Widget(QWidget):
         test_button.clicked.connect(self.test_click)
             # Crypto choice
         crypto_text = QLabel('Cryptomonnaie :')
-        cryptocurrencie_title = QComboBox()
-        cryptocurrencie_title.addItems(['Bitcoin', 'Ethereum'])
-        cryptocurrencie_title.currentIndexChanged.connect(self.crypto_change)
+        crypto_title = QComboBox()
+        crypto_title.addItems(['Bitcoin', 'Ethereum'])
+        crypto_title.currentIndexChanged.connect(self.crypto_change)
             # Labels
-        error_label = QLabel('Erreur moyenne: '+ 'xx,x%')
-        rmse_label = QLabel('RMSE: '+'xxx')
+        self.error_label = QLabel('Erreur moyenne: --%')
+        self.rmse_label = QLabel('RMSE: '+str(self.RMSE))
             # Model choice
         model_text = QLabel('Modèle :')
         models_button = QComboBox()
@@ -71,7 +73,7 @@ class Widget(QWidget):
 
         # Adding crypto to layout
         title_box.addWidget(crypto_text)
-        title_box.addWidget(cryptocurrencie_title)
+        title_box.addWidget(crypto_title)
         left_box.addLayout(title_box)
         # Adding models to layout
         model_box.addWidget(model_text)
@@ -80,8 +82,8 @@ class Widget(QWidget):
         left_box.addLayout(prediction_box)
         left_box.addSpacing(15)
         # Adding error labels
-        left_box.addWidget(error_label)
-        left_box.addWidget(rmse_label)
+        left_box.addWidget(self.error_label)
+        left_box.addWidget(self.rmse_label)
         left_box.addSpacing(10)
         # Adding train/test buttons
         button_box.addWidget(train_button)
@@ -119,13 +121,13 @@ class Widget(QWidget):
         if self.isBtc == False:
             data = self.eth
             title = 'Ethereum'
-        breakvalue = 1621972432000
+        limit = 1621972432000
         if self.aWeekIsChecked == False:
-            breakvalue = 1619942032000
+            limit = 1619942032000
 
         # Filling QLineSeries
         for index, row in data.iterrows():
-            if row['date']>breakvalue:
+            if row['date']>limit:
                 self.serie1.append(row['date'], row['price'])
 
         # Filling QChart
@@ -177,16 +179,18 @@ class Widget(QWidget):
             for s in series:
                 self.chart.removeSeries(s)
 
+        self.calculate_error(data)
+
         self.serie1 = QtCharts.QLineSeries()
         self.serie1.setName('Prédiction')
 
-        breakvalue = 1621972432000
+        limit = 1621972432000
         if self.aWeekIsChecked == False:
-            breakvalue = 1619942032000
+            limit = 1619942032000
 
         # Filling QLineSeries
         for index, row in data.iterrows():
-            if row['date'] > breakvalue:
+            if row['date'] > limit:
                 self.serie1.append(row['date'], row['price'])
 
         # Filling QChart
@@ -206,3 +210,23 @@ class Widget(QWidget):
         self.axis_y.setTitleText('Prix (USD)')
         self.chart.setAxisY(self.axis_y)
         self.serie1.attachAxis(self.axis_y)
+
+    def calculate_error(self, prediction):
+        data = self.btc
+        if not self.isBtc:
+            data = self.eth
+        limit = 1621972432000
+        if not self.aWeekIsChecked:
+            limit = 1619942032000
+        datalist = []
+        predlist = []
+        for index, row in data.iterrows():
+            if row['date']>limit:
+                datalist.append(row['price'])
+        for index, row in prediction.iterrows():
+            if row['date']>limit:
+                predlist.append(row['price'])
+
+        operation = [abs(a_i - b_i)/a_i for a_i, b_i in zip(datalist, predlist)]
+        self.error = round(100*sum(operation)/len(operation), 2)
+        self.error_label.setText('Erreur moyenne: '+str(self.error)+'%')
